@@ -1,0 +1,14 @@
+[project]
+name = "abb-rws-8"
+version = "0.1.0"
+description = "Python driver for ABB RobotWare 8 Robot Web Services."
+readme = "README.md"
+authors = [
+    { name = "Randy Plua", email = "rplua@uoc.edu" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
