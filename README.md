@@ -83,9 +83,9 @@ The distribution name is `abb-rws-8`; Python imports use `abb_rws_8`. Empty `tes
 
 ## Current progress
 
-`RWSClient` configures a shared HTTPX client with Basic authentication, JSON response headers, and an explicit five-second timeout. `get_services()` currently returns the `/rw` URL; it does not send a request. The example uses `try/finally` to close the client and a placeholder password.
+`RWSClient` configures a shared HTTPX client with Basic authentication, JSON response headers, and an explicit five-second timeout. `get_services()` sends `GET /rw`, checks the HTTP status, and returns `(status_code, service_names)`. The controller lists installed RobotWare services, not every available operation. The example uses `try/finally` to close the client. It uses credentials for the local virtual-controller exercise and disables certificate verification explicitly; configure credentials and certificate verification for other environments.
 
-TLS configuration and actual HTTP requests are not implemented yet. No controller writes or motion operations are implemented.
+TLS verification is enabled by default and can be configured with a boolean or an SSL context. No controller writes or motion operations are implemented.
 
 ## Development
 
@@ -94,10 +94,16 @@ uv sync --locked
 uv run python examples/read_controller.py
 ```
 
-The example prints the service URL without contacting the controller. Never commit real credentials.
+The example contacts the configured virtual controller and prints the HTTP status and one installed RobotWare service name per line. Do not commit private credentials.
 
 ## Tested virtual controller connection
 
 During manual curl tests, macOS connected to Windows at `10.211.55.4:8001`. A Windows TCP port proxy forwarded that connection to `127.0.0.1:80`. Direct remote access returned 401; the forwarded route returned 200 with the same credentials. These addresses are specific to the development environment.
 
-The exported controller certificate contained `127.0.0.1` in its SAN. Curl used `--cacert` and `--connect-to` to verify TLS while connecting through the proxy. The equivalent Python configuration remains pending. The certificate is external to this repository.
+The exported controller certificate contained `127.0.0.1` in its SAN. Curl used `--cacert` and `--connect-to` to verify TLS while connecting through the proxy. The Python example currently uses `verify=False`; the equivalent verified proxy connection remains pending. The certificate is external to this repository.
+
+### Get RobotWare services
+
+`GET /rw` returns links to installed RobotWare services. The list depends on the services installed on the controller. This does not enumerate every RWS endpoint or guarantee permission to perform every operation.
+
+`get_services()` returns the successful HTTP status and the service names extracted from `_embedded.resources[*]._title`. HTTP error responses raise `httpx.HTTPStatusError` before JSON parsing. The documented responses include 200 for success and 406 when the requested response representation cannot be generated.
