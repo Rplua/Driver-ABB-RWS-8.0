@@ -2,7 +2,7 @@
 
 A Python SDK project for communicating with ABB OmniCore controllers running RobotWare 8 through Robot Web Services (RWS).
 
-The project is being developed incrementally. The empty package structure is in place. The responsibilities below describe planned behavior, not implemented features.
+The project is being developed incrementally. The initial HTTP client configuration and a URL-building example are in place; service modules remain empty. The responsibilities below describe planned behavior, not implemented features.
 
 ## Package organization
 
@@ -10,7 +10,7 @@ The Python import package is `abb_rws_8`. The `8` identifies RobotWare 8; the ta
 
 | Module | Intended responsibility |
 | --- | --- |
-| `client.py` | Share the HTTP session, authentication, TLS configuration, timeouts, and request handling across services. |
+| `rws_client.py` | Share the HTTP session, authentication, TLS configuration, timeouts, and request handling across services. |
 | `models.py` | Represent controller responses as Python data objects when useful. Split this module only when its size or responsibilities justify it. |
 | `exceptions.py` | Define the library's public exceptions so applications can handle failures consistently. |
 | `services/` | Group RWS operations by API domain while using the shared HTTP client. |
@@ -63,7 +63,7 @@ Driver-ABB-RWS-8.0/
 ├── src/
 │   └── abb_rws_8/
 │       ├── __init__.py
-│       ├── client.py
+│       ├── rws_client.py
 │       ├── models.py
 │       ├── exceptions.py
 │       └── services/
@@ -80,3 +80,24 @@ Driver-ABB-RWS-8.0/
 ```
 
 The distribution name is `abb-rws-8`; Python imports use `abb_rws_8`. Empty `tests/` and `examples/` directories contain `.gitkeep` placeholders so Git can track them.
+
+## Current progress
+
+`RWSClient` configures a shared HTTPX client with Basic authentication, JSON response headers, and an explicit five-second timeout. `get_services()` currently returns the `/rw` URL; it does not send a request. The example uses `try/finally` to close the client and a placeholder password.
+
+TLS configuration and actual HTTP requests are not implemented yet. No controller writes or motion operations are implemented.
+
+## Development
+
+```bash
+uv sync --locked
+uv run python examples/read_controller.py
+```
+
+The example prints the service URL without contacting the controller. Never commit real credentials.
+
+## Tested virtual controller connection
+
+During manual curl tests, macOS connected to Windows at `10.211.55.4:8001`. A Windows TCP port proxy forwarded that connection to `127.0.0.1:80`. Direct remote access returned 401; the forwarded route returned 200 with the same credentials. These addresses are specific to the development environment.
+
+The exported controller certificate contained `127.0.0.1` in its SAN. Curl used `--cacert` and `--connect-to` to verify TLS while connecting through the proxy. The equivalent Python configuration remains pending. The certificate is external to this repository.
