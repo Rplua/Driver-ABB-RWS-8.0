@@ -3,6 +3,7 @@ import ssl
 import httpx
 
 from abb_rws_8.exceptions import RWSConnectionError, RWSHTTPError, RWSTimeoutError
+from abb_rws_8.services.control_station import ControlStationService
 from abb_rws_8.services.controller import ControllerService
 from abb_rws_8.services.rapid import RapidService
 from abb_rws_8.services.subscription import SubscriptionService
@@ -31,9 +32,13 @@ class RWSClient:
             timeout=5.0,
             verify=verify,
         )
-        self.controller = ControllerService(self)
-        self.rapid = RapidService(self)
-        self.subscription = SubscriptionService(self)
+        self.controller_service = ControllerService(self)
+        self.rapid_service = RapidService(self)
+        self.control_station = ControlStationService(self)
+        self.subscription_service = SubscriptionService(self)
+        self.controller = self.controller_service
+        self.rapid = self.rapid_service
+        self.subscription = self.subscription_service
 
     def _get(
         self, resource_path: str, *, headers: dict[str, str] | None = None
@@ -64,7 +69,7 @@ class RWSClient:
         return response.status_code, service_names
 
     def _post_form(self, path: str, data: dict[str,str]) -> httpx.Response:
-        """Send a POST request and translate HTTPX failures into driver errors."""
+
         try:
             response = self._http_client.post(path, data=data, headers={
                 "Accept": "application/xhtml+xml;v=2.0",

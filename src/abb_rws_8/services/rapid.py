@@ -18,3 +18,6 @@ class RapidService:
             if entry["_type"] == "rap-data":
                 return entry["value"]
         raise RWS8Exception("RAPID variable value not found")
+
+    def write_variable(self, task: str, module: str, variable: str, value: str) -> None:
+        self.rws_client._post_form(f"rw/rapid/symbol/RAPID/{task}/{module}/{variable}/data", data={"value": value})
