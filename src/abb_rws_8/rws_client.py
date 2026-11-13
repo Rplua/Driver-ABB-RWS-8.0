@@ -19,6 +19,11 @@ class RWSClient:
         self.base_url = base_url
         self.username = username
         self.password = password
+        self._websocket_tls = verify if isinstance(verify, ssl.SSLContext) else None
+        if verify is False:
+            self._websocket_tls = ssl.create_default_context()
+            self._websocket_tls.check_hostname = False
+            self._websocket_tls.verify_mode = ssl.CERT_NONE
         self._http_client: httpx.Client = httpx.Client(
             base_url=self.base_url,
             auth=httpx.BasicAuth(self.username, self.password),
@@ -30,10 +35,12 @@ class RWSClient:
         self.rapid = RapidService(self)
         self.subscription = SubscriptionService(self)
 
-    def _get(self, resource_path: str) -> httpx.Response:
+    def _get(
+        self, resource_path: str, *, headers: dict[str, str] | None = None
+    ) -> httpx.Response:
         """Send a GET request and translate HTTPX failures into driver errors."""
         try:
-            response = self._http_client.get(resource_path)
+            response = self._http_client.get(resource_path, headers=headers)
         except httpx.TimeoutException as err:
             raise RWSTimeoutError(f"Request timed out: GET {resource_path}") from err
         except httpx.ConnectError as err:
@@ -75,6 +82,12 @@ class RWSClient:
                 message=f"Post {path} failed with HTTP {response.status_code}",
             )from err
         return response
+
+    def logout(self) -> None:
+        """End the current controller session and clear its cookies."""
+        if self._http_client.cookies:
+            self._get("/logout", headers={"Accept": "application/xhtml+xml;v=2.0"})
+            self._http_client.cookies.clear()
 
     def close(self) -> None:
         self._http_client.close()
