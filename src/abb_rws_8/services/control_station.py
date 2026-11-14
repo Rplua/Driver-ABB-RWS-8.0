@@ -37,3 +37,10 @@ class ControlStationService:
 
     def release_write_access(self) -> None:
         self._client._post_form("/rw/controlstation/writeaccess/release", data={})
+
+    def allow_motion_control(self, allowed: bool) -> None:
+        """Set motion control permission for the current remote station."""
+        self._client._post_form(
+            "/rw/controlstation/allowmotioncontrol",
+            data={"allow-motion-control": "true" if allowed else "false"},
+        )

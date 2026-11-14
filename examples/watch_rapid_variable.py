@@ -1,22 +1,26 @@
 import logging
 from getpass import getpass
+from os import environ
 
 from websockets.exceptions import WebSocketException
 
 from abb_rws_8.exceptions import RWS8Exception
 from abb_rws_8.rws_client import RWSClient
 
-BASE_URL = "https://10.211.55.4:8001"
 logger = logging.getLogger(__name__)
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    base_url = environ.get("ABB_RWS_URL")
+    if not base_url:
+        logger.error("Set ABB_RWS_URL to the controller HTTPS base URL.")
+        return 1
     password = getpass("Controller password for admin: ")
 
     # The virtual controller uses a certificate that isn't trusted by this Mac.
     robot = RWSClient(
-        base_url=BASE_URL,
+        base_url=base_url,
         username="admin",
         password=password,
         verify=False,
